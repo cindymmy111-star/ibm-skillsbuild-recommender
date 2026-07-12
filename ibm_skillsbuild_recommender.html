@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM SkillsBuild Learning Pathway Advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ibm-blue: #0F62FE;
+    --ibm-blue-dark: #0043CE;
+    --ibm-blue-light: #EDF5FF;
+    --ibm-gray-10: #F4F4F4;
+    --ibm-gray-20: #E0E0E0;
+    --ibm-gray-70: #525252;
+    --ibm-gray-90: #262626;
+    --ibm-teal: #009D9A;
+    --ibm-purple: #8A3FFC;
+    --color-bg: #ffffff;
+    --color-bg-secondary: #f4f4f4;
+    --color-text-primary: #161616;
+    --color-text-secondary: #525252;
+    --color-border: rgba(0,0,0,0.12);
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #161616;
+      --color-bg-secondary: #262626;
+      --color-text-primary: #f4f4f4;
+      --color-text-secondary: #a8b2bf;
+      --color-border: rgba(255,255,255,0.12);
+      --ibm-blue-light: #001d6c;
+    }
+  }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--color-bg-secondary); color: var(--color-text-primary); min-height: 100vh; padding: 2rem 1rem; }
+  .app { max-width: 860px; margin: 0 auto; background: var(--color-bg); border-radius: var(--border-radius-lg); overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .header { background: var(--ibm-gray-90); color: #fff; padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  .ibm-logo { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; letter-spacing: -1px; color: #fff; }
+  .header-title { font-size: 14px; color: #a8b2bf; border-left: 1px solid #3d3d3d; padding-left: 1rem; }
+  .nav { display: flex; border-bottom: 1px solid var(--color-border); background: var(--color-bg); padding: 0 2rem; }
+  .nav-btn { padding: 0.875rem 1.25rem; font-size: 14px; background: none; border: none; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; }
+  .nav-btn.active { color: var(--ibm-blue); border-bottom-color: var(--ibm-blue); font-weight: 500; }
+  .nav-btn:hover:not(.active) { color: var(--color-text-primary); background: var(--color-bg-secondary); }
+  .panel { display: none; padding: 2rem; }
+  .panel.active { display: block; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 1rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .form-field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-field.full { grid-column: 1 / -1; }
+  label { font-size: 13px; color: var(--color-text-secondary); font-weight: 500; }
+  select, input[type=text] { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-md); font-size: 14px; background: var(--color-bg); color: var(--color-text-primary); width: 100%; font-family: inherit; }
+  select:focus, input:focus { outline: 2px solid var(--ibm-blue); outline-offset: -1px; border-color: transparent; }
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 0.5rem; }
+  .skill-tag { padding: 0.45rem 0.75rem; border: 1px solid var(--color-border); border-radius: 999px; font-size: 13px; cursor: pointer; background: var(--color-bg); color: var(--color-text-secondary); transition: all 0.15s; text-align: center; user-select: none; font-family: inherit; }
+  .skill-tag.selected { background: var(--ibm-blue-light); border-color: var(--ibm-blue); color: var(--ibm-blue); font-weight: 500; }
+  .divider { border: none; border-top: 1px solid var(--color-border); margin: 1.75rem 0; }
+  .btn-primary { background: var(--ibm-blue); color: #fff; border: none; padding: 0.7rem 1.5rem; font-size: 14px; font-weight: 500; border-radius: var(--border-radius-md); cursor: pointer; transition: background 0.15s; font-family: inherit; }
+  .btn-primary:hover { background: var(--ibm-blue-dark); }
+  .btn-primary:disabled { background: var(--color-border); color: var(--color-text-secondary); cursor: not-allowed; }
+  .loading-bar { height: 3px; background: var(--color-border); border-radius: 2px; overflow: hidden; margin-bottom: 1.5rem; }
+  .loading-fill { height: 100%; background: var(--ibm-blue); border-radius: 2px; width: 0%; transition: width 0.4s ease; }
+  .pathway-card { border: 1px solid var(--color-border); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; background: var(--color-bg); position: relative; overflow: hidden; }
+  .pathway-card.featured { border-color: var(--ibm-blue); border-width: 1.5px; }
+  .pathway-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .pathway-card.ai-path::before { background: var(--ibm-blue); }
+  .pathway-card.data-path::before { background: var(--ibm-teal); }
+  .pathway-card.cloud-path::before { background: var(--ibm-purple); }
+  .pathway-card.dev-path::before { background: #ff832b; }
+  .pathway-card.security-path::before { background: #da1e28; }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+  .card-title { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+  .match-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #defbe6; color: #0e6027; white-space: nowrap; }
+  .match-badge.mid { background: #fff8e1; color: #7c4900; }
+  .card-desc { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 1rem; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.875rem; }
+  .tag { font-size: 11px; padding: 3px 10px; border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .duration { font-size: 12px; color: var(--color-text-secondary); }
+  .card-actions { display: flex; gap: 8px; }
+  .btn-sm { font-size: 12px; padding: 0.4rem 0.875rem; border-radius: var(--border-radius-md); cursor: pointer; border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text-primary); transition: all 0.15s; font-family: inherit; }
+  .btn-sm:hover { background: var(--color-bg-secondary); }
+  .btn-sm.saved { background: var(--ibm-blue-light); border-color: var(--ibm-blue); color: var(--ibm-blue); }
+  .btn-link { font-size: 12px; padding: 0.4rem 0.875rem; border-radius: var(--border-radius-md); cursor: pointer; border: none; background: var(--ibm-blue); color: #fff; transition: all 0.15s; font-family: inherit; }
+  .btn-link:hover { background: var(--ibm-blue-dark); }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--color-bg-secondary); border-radius: var(--border-radius-md); padding: 1rem; }
+  .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-val { font-size: 26px; font-weight: 500; color: var(--color-text-primary); }
+  .progress-item { margin-bottom: 1rem; }
+  .progress-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--color-text-secondary); }
+  .progress-bar { height: 6px; background: var(--color-bg-secondary); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--ibm-blue); border-radius: 3px; transition: width 0.5s ease; }
+  .feedback-stars { display: flex; gap: 6px; margin: 0.5rem 0 1rem; }
+  .star { font-size: 22px; cursor: pointer; color: var(--color-border); transition: color 0.1s; line-height: 1; }
+  .star.lit { color: #f1c21b; }
+  textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-md); font-size: 14px; line-height: 1.6; min-height: 100px; resize: vertical; background: var(--color-bg); color: var(--color-text-primary); font-family: inherit; }
+  .feedback-submitted { text-align: center; padding: 2rem; color: var(--color-text-secondary); font-size: 14px; }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--color-text-secondary); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; opacity: 0.4; }
+  .empty-title { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.5rem; }
+  .ai-thinking { display: flex; align-items: center; gap: 10px; padding: 1rem 1.25rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-md); font-size: 14px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ibm-blue); display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-field.full { grid-column: 1; }
+    .stats-row { grid-template-columns: 1fr; }
+    .nav-btn { padding: 0.75rem 0.75rem; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="ibm-logo">IBM</div>
+    <div class="header-title">SkillsBuild Learning Pathway Advisor</div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('profile', this)">My Profile</button>
+    <button class="nav-btn" onclick="showTab('pathways', this)">Recommendations</button>
+    <button class="nav-btn" onclick="showTab('dashboard', this)">Dashboard</button>
+    <button class="nav-btn" onclick="showTab('feedback', this)">Feedback</button>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div class="panel active" id="panel-profile">
+    <div class="section-label">Academic Background</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Degree Program</label>
+        <select id="degree">
+          <option value="">Select your program</option>
+          <option>Computer Science</option>
+          <option>Data Science</option>
+          <option>Information Technology</option>
+          <option>Electrical Engineering</option>
+          <option>Business & Management</option>
+          <option>Mathematics & Statistics</option>
+          <option>Psychology</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Year of Study</label>
+        <select id="year">
+          <option value="">Select year</option>
+          <option>1st Year</option>
+          <option>2nd Year</option>
+          <option>3rd Year</option>
+          <option>Final Year</option>
+          <option>Postgraduate</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <label>Areas of Academic Interest</label>
+        <input type="text" id="interests" placeholder="e.g. machine learning, distributed systems, data visualisation...">
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-label">Career Aspirations</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Preferred Industry</label>
+        <select id="industry">
+          <option value="">Select industry</option>
+          <option>Technology</option>
+          <option>Finance & Banking</option>
+          <option>Healthcare</option>
+          <option>Retail & E-commerce</option>
+          <option>Government & Public Sector</option>
+          <option>Consulting</option>
+          <option>Research & Academia</option>
+          <option>Startup / Entrepreneurship</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Target Job Role</label>
+        <select id="role">
+          <option value="">Select role</option>
+          <option>Data Scientist</option>
+          <option>Machine Learning Engineer</option>
+          <option>Cloud Architect</option>
+          <option>Software Developer</option>
+          <option>Cybersecurity Analyst</option>
+          <option>Business Analyst</option>
+          <option>DevOps Engineer</option>
+          <option>AI/ML Researcher</option>
+          <option>Product Manager</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-label">Existing Skills — select all that apply</div>
+    <div class="skills-grid">
+      <div class="skill-tag" onclick="toggleSkill(this)">Python</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">JavaScript</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Java</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">SQL</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Machine Learning</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Cloud (AWS/GCP/Azure)</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Linux</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Data Analysis</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Statistics</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Communication</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Project Management</div>
+      <div class="skill-tag" onclick="toggleSkill(this)">Problem Solving</div>
+    </div>
+
+    <hr class="divider">
+    <button class="btn-primary" id="gen-btn" onclick="generateRecommendations()">Get My Learning Pathways</button>
+  </div>
+
+  <!-- PATHWAYS TAB -->
+  <div class="panel" id="panel-pathways">
+    <div id="pathways-content">
+      <div class="empty-state">
+        <span class="empty-icon">🎯</span>
+        <div class="empty-title">No recommendations yet</div>
+        <p style="font-size:14px">Complete your profile to get personalised IBM SkillsBuild pathways.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="panel" id="panel-dashboard">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Saved Pathways</div>
+        <div class="stat-val" id="stat-saved">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Courses Explored</div>
+        <div class="stat-val" id="stat-explored">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Profile Complete</div>
+        <div class="stat-val" id="stat-complete">0%</div>
+      </div>
+    </div>
+    <div class="section-label">Saved Learning Plans</div>
+    <div id="saved-list">
+      <div class="empty-state" style="padding:2rem 0">
+        <span class="empty-icon">📚</span>
+        <div class="empty-title">Nothing saved yet</div>
+        <p style="font-size:14px">Bookmark pathways from the Recommendations tab.</p>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="section-label">Skill Coverage</div>
+    <div id="skill-coverage">
+      <p style="font-size:14px;color:var(--color-text-secondary)">Generate recommendations first to see your skill coverage.</p>
+    </div>
+  </div>
+
+  <!-- FEEDBACK TAB -->
+  <div class="panel" id="panel-feedback">
+    <div id="feedback-content">
+      <div class="section-label">Rate Your Experience</div>
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:1rem">How relevant were the recommended learning pathways for your goals?</p>
+      <div class="feedback-stars" id="stars">
+        <span class="star" onclick="rateStar(1)">★</span>
+        <span class="star" onclick="rateStar(2)">★</span>
+        <span class="star" onclick="rateStar(3)">★</span>
+        <span class="star" onclick="rateStar(4)">★</span>
+        <span class="star" onclick="rateStar(5)">★</span>
+      </div>
+      <hr class="divider">
+      <div class="section-label">What would you improve?</div>
+      <textarea id="fb-text" placeholder="Tell us how we can make the recommendations more useful..."></textarea>
+      <div style="margin-top:1rem">
+        <button class="btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let savedPathways = [];
+  let exploredCount = 0;
+  let currentRating = 0;
+  let recommendations = [];
+
+  // ============================================================
+  // RULE-BASED RECOMMENDATION ENGINE
+  // Yiwen Ma — IBM SkillsBuild Recommendation Logic
+  // ============================================================
+
+  // --- 1. IBM SkillsBuild Course Catalogue ---
+  const COURSE_CATALOGUE = [
+    {
+      id: "c01",
+      title: "Machine Learning with Python",
+      category: "AI & Machine Learning",
+      topics: ["Supervised Learning", "Model Evaluation", "Scikit-learn", "Neural Networks"],
+      duration: "12 hours",
+      level: "intermediate",
+      badge: "IBM Machine Learning Professional",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Machine Learning Engineer", "Data Scientist", "AI/ML Researcher"],
+      targetDegrees: ["Computer Science", "Data Science", "Mathematics & Statistics"],
+      requiredSkills: ["Python"],
+      teachesSkills: ["Machine Learning", "Statistics", "Data Analysis"]
+    },
+    {
+      id: "c02",
+      title: "AI Foundations for Everyone",
+      category: "AI & Machine Learning",
+      topics: ["AI Concepts", "Ethics in AI", "Machine Learning Basics", "Natural Language Processing"],
+      duration: "6 hours",
+      level: "beginner",
+      badge: "IBM AI Foundations",
+      url: "https://skillsbuild.org",
+      targetRoles: ["AI/ML Researcher", "Business Analyst", "Product Manager", "Data Scientist"],
+      targetDegrees: ["Computer Science", "Business & Management", "Psychology", "Other"],
+      requiredSkills: [],
+      teachesSkills: ["Machine Learning", "Problem Solving"]
+    },
+    {
+      id: "c03",
+      title: "Data Science Fundamentals",
+      category: "Data Science & Analytics",
+      topics: ["Data Wrangling", "Exploratory Analysis", "Visualisation", "Statistical Methods"],
+      duration: "10 hours",
+      level: "beginner",
+      badge: "IBM Data Science Foundations",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Data Scientist", "Business Analyst", "AI/ML Researcher"],
+      targetDegrees: ["Data Science", "Mathematics & Statistics", "Business & Management", "Computer Science"],
+      requiredSkills: [],
+      teachesSkills: ["Data Analysis", "Statistics", "Python"]
+    },
+    {
+      id: "c04",
+      title: "Introduction to Cloud Computing",
+      category: "Cloud Computing",
+      topics: ["Cloud Models (IaaS/PaaS/SaaS)", "IBM Cloud", "Virtualisation", "Scalability"],
+      duration: "8 hours",
+      level: "beginner",
+      badge: "IBM Cloud Foundations",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Cloud Architect", "DevOps Engineer", "Software Developer"],
+      targetDegrees: ["Computer Science", "Information Technology", "Electrical Engineering"],
+      requiredSkills: [],
+      teachesSkills: ["Cloud (AWS/GCP/Azure)", "Linux"]
+    },
+    {
+      id: "c05",
+      title: "Cybersecurity Fundamentals",
+      category: "Cybersecurity",
+      topics: ["Threat Analysis", "Network Security", "Encryption", "Incident Response"],
+      duration: "9 hours",
+      level: "beginner",
+      badge: "IBM Cybersecurity Analyst",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Cybersecurity Analyst", "DevOps Engineer", "Software Developer"],
+      targetDegrees: ["Computer Science", "Information Technology", "Electrical Engineering"],
+      requiredSkills: [],
+      teachesSkills: ["Linux", "Problem Solving"]
+    },
+    {
+      id: "c06",
+      title: "Python for Data Science and AI",
+      category: "Data Science & Analytics",
+      topics: ["Pandas", "NumPy", "Data Visualisation", "APIs"],
+      duration: "8 hours",
+      level: "beginner",
+      badge: null,
+      url: "https://skillsbuild.org",
+      targetRoles: ["Data Scientist", "Machine Learning Engineer", "AI/ML Researcher", "Software Developer"],
+      targetDegrees: ["Data Science", "Computer Science", "Mathematics & Statistics"],
+      requiredSkills: [],
+      teachesSkills: ["Python", "Data Analysis", "Statistics"]
+    },
+    {
+      id: "c07",
+      title: "IBM Cloud Architecture",
+      category: "Cloud Computing",
+      topics: ["Microservices", "Kubernetes", "IBM Cloud Pak", "Hybrid Cloud"],
+      duration: "15 hours",
+      level: "advanced",
+      badge: "IBM Cloud Professional Architect",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Cloud Architect", "DevOps Engineer"],
+      targetDegrees: ["Computer Science", "Information Technology", "Electrical Engineering"],
+      requiredSkills: ["Cloud (AWS/GCP/Azure)", "Linux"],
+      teachesSkills: ["Cloud (AWS/GCP/Azure)", "Project Management"]
+    },
+    {
+      id: "c08",
+      title: "Enterprise Design Thinking",
+      category: "Software Development",
+      topics: ["User Research", "Prototyping", "Agile Methods", "Stakeholder Mapping"],
+      duration: "5 hours",
+      level: "beginner",
+      badge: "IBM Enterprise Design Thinking Practitioner",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Product Manager", "Business Analyst", "Software Developer"],
+      targetDegrees: ["Business & Management", "Computer Science", "Psychology", "Other"],
+      requiredSkills: [],
+      teachesSkills: ["Communication", "Project Management", "Problem Solving"]
+    },
+    {
+      id: "c09",
+      title: "DevOps and Software Engineering",
+      category: "Software Development",
+      topics: ["CI/CD Pipelines", "Docker", "Agile", "Test-Driven Development"],
+      duration: "12 hours",
+      level: "intermediate",
+      badge: "IBM DevOps Professional",
+      url: "https://skillsbuild.org",
+      targetRoles: ["DevOps Engineer", "Software Developer", "Cloud Architect"],
+      targetDegrees: ["Computer Science", "Information Technology", "Electrical Engineering"],
+      requiredSkills: ["Linux"],
+      teachesSkills: ["Linux", "Project Management", "Problem Solving"]
+    },
+    {
+      id: "c10",
+      title: "SQL and Relational Databases",
+      category: "Data Science & Analytics",
+      topics: ["SQL Queries", "Database Design", "Joins & Aggregations", "IBM Db2"],
+      duration: "6 hours",
+      level: "beginner",
+      badge: null,
+      url: "https://skillsbuild.org",
+      targetRoles: ["Data Scientist", "Business Analyst", "Software Developer"],
+      targetDegrees: ["Data Science", "Computer Science", "Business & Management", "Mathematics & Statistics"],
+      requiredSkills: [],
+      teachesSkills: ["SQL", "Data Analysis"]
+    },
+    {
+      id: "c11",
+      title: "Business Analytics and Decision Making",
+      category: "Data Science & Analytics",
+      topics: ["Descriptive Analytics", "KPI Frameworks", "Business Intelligence", "Reporting"],
+      duration: "8 hours",
+      level: "intermediate",
+      badge: "IBM Business Analytics",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Business Analyst", "Product Manager", "Data Scientist"],
+      targetDegrees: ["Business & Management", "Mathematics & Statistics", "Data Science"],
+      requiredSkills: ["SQL"],
+      teachesSkills: ["Data Analysis", "Communication", "Statistics"]
+    },
+    {
+      id: "c12",
+      title: "Deep Learning and Neural Networks",
+      category: "AI & Machine Learning",
+      topics: ["CNNs", "RNNs", "Transfer Learning", "TensorFlow / PyTorch"],
+      duration: "16 hours",
+      level: "advanced",
+      badge: "IBM AI Engineering Professional",
+      url: "https://skillsbuild.org",
+      targetRoles: ["Machine Learning Engineer", "AI/ML Researcher"],
+      targetDegrees: ["Computer Science", "Data Science", "Mathematics & Statistics", "Electrical Engineering"],
+      requiredSkills: ["Python", "Machine Learning"],
+      teachesSkills: ["Machine Learning", "Statistics", "Data Analysis"]
+    }
+  ];
+
+  // --- 2. Matching Rules & Scoring Algorithm ---
+
+  // Level mapping: year of study → appropriate difficulty
+  const LEVEL_MAP = {
+    "1st Year":     ["beginner"],
+    "2nd Year":     ["beginner", "intermediate"],
+    "3rd Year":     ["beginner", "intermediate", "advanced"],
+    "Final Year":   ["intermediate", "advanced"],
+    "Postgraduate": ["intermediate", "advanced"]
+  };
+
+  // Role → primary category preference
+  const ROLE_CATEGORY_MAP = {
+    "Data Scientist":           "Data Science & Analytics",
+    "Machine Learning Engineer":"AI & Machine Learning",
+    "Cloud Architect":          "Cloud Computing",
+    "Software Developer":       "Software Development",
+    "Cybersecurity Analyst":    "Cybersecurity",
+    "Business Analyst":         "Data Science & Analytics",
+    "DevOps Engineer":          "Software Development",
+    "AI/ML Researcher":         "AI & Machine Learning",
+    "Product Manager":          "Software Development"
+  };
+
+  // Degree → secondary category affinity
+  const DEGREE_CATEGORY_MAP = {
+    "Computer Science":        ["Software Development", "AI & Machine Learning"],
+    "Data Science":            ["Data Science & Analytics", "AI & Machine Learning"],
+    "Information Technology":  ["Cloud Computing", "Cybersecurity"],
+    "Electrical Engineering":  ["Cloud Computing", "Software Development"],
+    "Business & Management":   ["Data Science & Analytics", "Software Development"],
+    "Mathematics & Statistics":["Data Science & Analytics", "AI & Machine Learning"],
+    "Psychology":              ["AI & Machine Learning", "Software Development"],
+    "Other":                   ["Software Development", "Data Science & Analytics"]
+  };
+
+  /**
+   * scoreCourse — core rule-based scoring function
+   * Returns a score 0–100 for a course given a student profile.
+   *
+   * Scoring breakdown:
+   *   Role match (primary category)  → 35 pts
+   *   Degree match (secondary affinity) → 20 pts
+   *   Level appropriateness           → 15 pts
+   *   Skill gap (teaches missing skill)→ 20 pts
+   *   Interest keyword match          → 10 pts
+   */
+  function scoreCourse(course, profile) {
+    let score = 0;
+    const { degree, year, interests, role, skills } = profile;
+
+    // Rule 1: Role match via primary category
+    const primaryCategory = ROLE_CATEGORY_MAP[role] || "";
+    if (course.category === primaryCategory) score += 35;
+    else if (course.targetRoles.includes(role)) score += 20;
+
+    // Rule 2: Degree affinity (secondary category)
+    const degreeCategories = DEGREE_CATEGORY_MAP[degree] || [];
+    if (degreeCategories.includes(course.category)) score += 20;
+    if (course.targetDegrees.includes(degree)) score += 5; // bonus for explicit degree match
+
+    // Rule 3: Level appropriateness for year of study
+    const allowedLevels = LEVEL_MAP[year] || ["beginner", "intermediate", "advanced"];
+    if (allowedLevels.includes(course.level)) score += 15;
+
+    // Rule 4: Skill gap — reward courses that teach skills the student doesn't have
+    const gapSkills = course.teachesSkills.filter(s => !skills.includes(s));
+    const coverageSkills = course.teachesSkills.filter(s => skills.includes(s));
+    score += Math.min(gapSkills.length * 5, 15); // up to 15 pts for new skills
+    score += Math.min(coverageSkills.length * 2, 5); // small bonus for relevance
+
+    // Rule 5: Required skills already held (student is ready for this course)
+    if (course.requiredSkills.length === 0) {
+      score += 3; // no prerequisites — accessible
+    } else {
+      const hasAllRequired = course.requiredSkills.every(s => skills.includes(s));
+      if (hasAllRequired) score += 5;
+      else score -= 10; // penalty: student may not be ready
+    }
+
+    // Rule 6: Interest keyword match (free-text)
+    if (interests) {
+      const interestWords = interests.toLowerCase().split(/[\s,;]+/);
+      const topicText = course.topics.join(" ").toLowerCase();
+      const titleText = course.title.toLowerCase();
+      const matches = interestWords.filter(w => w.length > 2 && (topicText.includes(w) || titleText.includes(w)));
+      score += Math.min(matches.length * 3, 10);
+    }
+
+    // Clamp to 0–99 range and map to a realistic match percentage (65–99)
+    score = Math.max(0, Math.min(score, 100));
+    const matchScore = Math.round(65 + (score / 100) * 34);
+    return matchScore;
+  }
+
+  /**
+   * runRuleEngine — main entry point for the rule-based system
+   * Returns top 4 courses sorted by matchScore, descending.
+   */
+  function runRuleEngine(profile) {
+    const scored = COURSE_CATALOGUE.map(course => ({
+      ...course,
+      matchScore: scoreCourse(course, profile),
+      description: buildDescription(course, profile)
+    }));
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+    return scored.slice(0, 4);
+  }
+
+  /**
+   * buildDescription — generates a contextual description per course/profile pair
+   */
+  function buildDescription(course, profile) {
+    const rolePhrase = profile.role ? `your goal of becoming a ${profile.role}` : "your career goals";
+    const degreePhrase = profile.degree ? `your ${profile.degree} background` : "your academic background";
+    const levelPhrases = { beginner: "an accessible starting point", intermediate: "a well-matched next step", advanced: "an advanced challenge" };
+    const levelPhrase = levelPhrases[course.level] || "a relevant step";
+    return `This pathway directly supports ${rolePhrase} by covering ${course.topics.slice(0,2).join(" and ")}. It offers ${levelPhrase} given ${degreePhrase}.`;
+  }
+
+  // ============================================================
+  // END RULE-BASED ENGINE
+  // ============================================================
+
+  function showTab(tab, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'dashboard') updateDashboard();
+  }
+
+  function toggleSkill(el) { el.classList.toggle('selected'); }
+
+  function getSelectedSkills() {
+    return [...document.querySelectorAll('.skill-tag.selected')].map(e => e.textContent);
+  }
+
+  function profileComplete() {
+    let filled = 0;
+    if (document.getElementById('degree').value) filled++;
+    if (document.getElementById('year').value) filled++;
+    if (document.getElementById('interests').value.trim()) filled++;
+    if (document.getElementById('industry').value) filled++;
+    if (document.getElementById('role').value) filled++;
+    return Math.round((filled / 5) * 100);
+  }
+
+  async function generateRecommendations() {
+    const degree = document.getElementById('degree').value;
+    const year = document.getElementById('year').value;
+    const interests = document.getElementById('interests').value.trim();
+    const industry = document.getElementById('industry').value;
+    const role = document.getElementById('role').value;
+    const skills = getSelectedSkills();
+
+    if (!degree || !role) { alert('Please select at least your degree program and target role.'); return; }
+
+    const profile = { degree, year, interests, industry, role, skills };
+
+    const btn = document.getElementById('gen-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    const pathwaysTab = document.querySelectorAll('.nav-btn')[1];
+    showTab('pathways', pathwaysTab);
+
+    const container = document.getElementById('pathways-content');
+    container.innerHTML = `
+      <div class="ai-thinking">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span>Matching your profile against IBM SkillsBuild pathways...</span>
+      </div>
+      <div class="loading-bar" style="margin-top:1rem"><div class="loading-fill" id="lbar"></div></div>`;
+
+    // Animate loading bar
+    let prog = 0;
+    const iv = setInterval(() => {
+      prog = Math.min(prog + 15, 90);
+      const el = document.getElementById('lbar');
+      if (el) el.style.width = prog + '%';
+    }, 80);
+
+    // Run rule-based engine (synchronous, wrapped in timeout for UX)
+    setTimeout(() => {
+      clearInterval(iv);
+      const el = document.getElementById('lbar');
+      if (el) el.style.width = '100%';
+      try {
+        recommendations = runRuleEngine(profile);
+        setTimeout(() => renderRecommendations(recommendations), 300);
+      } catch(e) {
+        container.innerHTML = `<p style="color:var(--color-text-secondary);font-size:14px;padding:1rem 0">Could not generate recommendations. Please try again.</p>`;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Get My Learning Pathways';
+    }, 700);
+  }
+
+  function categoryClass(cat) {
+    const map = { 'AI & Machine Learning': 'ai-path', 'Data Science & Analytics': 'data-path', 'Cloud Computing': 'cloud-path', 'Software Development': 'dev-path', 'Cybersecurity': 'security-path' };
+    return map[cat] || 'ai-path';
+  }
+
+  function renderRecommendations(recs) {
+    const container = document.getElementById('pathways-content');
+    container.innerHTML = `<div class="section-label" style="margin-bottom:1.25rem">${recs.length} pathways matched to your profile</div>`;
+    recs.forEach((r, i) => {
+      const isSaved = savedPathways.some(s => s.title === r.title);
+      const isTop = i === 0;
+      const scoreClass = r.matchScore >= 85 ? '' : 'mid';
+      const div = document.createElement('div');
+      div.className = `pathway-card ${categoryClass(r.category)} ${isTop ? 'featured' : ''}`;
+      div.innerHTML = `
+        <div class="card-header">
+          <div>
+            ${isTop ? '<div style="font-size:11px;color:var(--ibm-blue);font-weight:500;margin-bottom:4px;letter-spacing:0.05em">TOP MATCH</div>' : ''}
+            <div class="card-title">${r.title}</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">${r.category}</div>
+          </div>
+          <div class="match-badge ${scoreClass}">${r.matchScore}% match</div>
+        </div>
+        <div class="card-desc">${r.description}</div>
+        <div class="card-tags">${r.topics.map(t => `<span class="tag">${t}</span>`).join('')}${r.badge ? `<span class="tag" style="background:var(--ibm-blue-light);border-color:var(--ibm-blue);color:var(--ibm-blue)">🏅 ${r.badge}</span>` : ''}</div>
+        <div class="card-footer">
+          <span class="duration">⏱ ${r.duration}</span>
+          <div class="card-actions">
+            <button class="btn-sm ${isSaved ? 'saved' : ''}" id="save-${i}" onclick="toggleSave(${i})">${isSaved ? 'Saved ✓' : 'Save'}</button>
+            <button class="btn-link" onclick="window.open('${r.url}', '_blank')">View on SkillsBuild ↗</button>
+          </div>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  function toggleSave(i) {
+    const r = recommendations[i];
+    const existing = savedPathways.findIndex(s => s.title === r.title);
+    if (existing === -1) { savedPathways.push(r); } else { savedPathways.splice(existing, 1); }
+    const isSaved = savedPathways.some(s => s.title === r.title);
+    const btn = document.getElementById('save-' + i);
+    btn.textContent = isSaved ? 'Saved ✓' : 'Save';
+    btn.className = 'btn-sm' + (isSaved ? ' saved' : '');
+  }
+
+  function updateDashboard() {
+    document.getElementById('stat-saved').textContent = savedPathways.length;
+    document.getElementById('stat-explored').textContent = exploredCount;
+    document.getElementById('stat-complete').textContent = profileComplete() + '%';
+    const list = document.getElementById('saved-list');
+    if (savedPathways.length === 0) {
+      list.innerHTML = `<div class="empty-state" style="padding:2rem 0"><span class="empty-icon">📚</span><div class="empty-title">Nothing saved yet</div><p style="font-size:14px">Bookmark pathways from the Recommendations tab.</p></div>`;
+    } else {
+      list.innerHTML = savedPathways.map(r => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--color-border)">
+          <div>
+            <div style="font-size:14px;font-weight:500">${r.title}</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">${r.category} · ${r.duration}</div>
+          </div>
+          <button class="btn-link" onclick="window.open('${r.url}','_blank')">Open ↗</button>
+        </div>`).join('');
+    }
+    const cov = document.getElementById('skill-coverage');
+    if (recommendations.length === 0) {
+      cov.innerHTML = `<p style="font-size:14px;color:var(--color-text-secondary)">Generate recommendations first to see your skill coverage.</p>`;
+      return;
+    }
+    const areas = ['AI & Machine Learning','Data Science & Analytics','Cloud Computing','Software Development','Cybersecurity'];
+    const counts = areas.map(a => recommendations.filter(r => r.category === a).length);
+    const max = Math.max(...counts, 1);
+    cov.innerHTML = areas.map((a, i) => `
+      <div class="progress-item">
+        <div class="progress-top"><span>${a}</span><span>${counts[i]} pathway${counts[i]!==1?'s':''}</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((counts[i]/max)*100)}%"></div></div>
+      </div>`).join('');
+  }
+
+  function rateStar(n) {
+    currentRating = n;
+    document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('lit', i < n));
+  }
+
+  function submitFeedback() {
+    if (currentRating === 0) { alert('Please rate your experience first.'); return; }
+    document.getElementById('feedback-content').innerHTML = `
+      <div class="feedback-submitted">
+        <span style="font-size:2rem;display:block;margin-bottom:0.5rem">✅</span>
+        <div style="font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:0.5rem">Thank you for your feedback!</div>
+        <p style="font-size:14px">You rated the recommendations ${currentRating}/5 star${currentRating!==1?'s':''}. Your input helps improve future pathway suggestions.</p>
+      </div>`;
+  }
+</script>
+</body>
+</html>
